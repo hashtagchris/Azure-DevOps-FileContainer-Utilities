@@ -1,0 +1,30 @@
+{
+  "name": "deletebuildartifactfiles",
+  "version": "1.0.0",
+  "description": "Delete a subset of files in Azure Pipelines build artifacts",
+  "main": "deleteBuildArtifactFiles.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/hashtagchris/DeleteBuildArtifactFiles.git"
+  },
+  "keywords": [
+    "AzureDevOps",
+    "AzurePipelines",
+    "FileContainer",
+    "artifact"
+  ],
+  "author": "Chris Sidi",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/hashtagchris/DeleteBuildArtifactFiles/issues"
+  },
+  "homepage": "https://github.com/hashtagchris/DeleteBuildArtifactFiles#readme",
+  "dependencies": {
+    "azure-devops-node-api": "^7.0.0",
+    "papaparse": "^4.6.2",
+    "yargs": "^12.0.5"
+  }
+}
