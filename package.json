@@ -1,6 +1,6 @@
 {
   "name": "deletebuildartifactfiles",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "description": "Delete a subset of files in Azure Pipelines build artifacts",
   "main": "deleteBuildArtifactFiles.js",
   "scripts": {

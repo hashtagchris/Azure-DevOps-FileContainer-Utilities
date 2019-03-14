@@ -6,8 +6,9 @@ const argv = common.addCommonArgs(require('yargs'))
   .describe('project', 'Project id or name')
   .describe('definitionId', 'build definition id (number)')
   .describe('filenameRegex', 'Regular expression for filenames')
+  .describe('pathRegex', 'Regular expression for filepaths')
   .describe('outcsv', 'output csv file')
-  .demand(['url', 'project', 'definitionId', 'filenameRegex', 'outcsv'])
+  .demand(['url', 'project', 'definitionId', 'outcsv'])
   .describe('dryrun', 'Execute without deleting files.')
   .describe('minAgeDays', 'minimum age of builds to scan, in days')
   .describe('maxAgeDays', 'maximum age of builds to scan, in days')
@@ -15,6 +16,13 @@ const argv = common.addCommonArgs(require('yargs'))
 
 (async function main() {
   try {
+    if (!argv.filenameRegex && !argv.pathRegex) {
+      throw new Error('--filenameRegex or --pathRegex required.');
+    }
+
+    const filenameRegex = argv.filenameRegex && new RegExp(argv.filenameRegex);
+    const pathRegex = argv.pathRegex && new RegExp(argv.pathRegex);
+
     const token = await common.getPersonalAccessToken(argv);
 
     const authHandler = azdev.getPersonalAccessTokenHandler(token);
@@ -23,8 +31,6 @@ const argv = common.addCommonArgs(require('yargs'))
     common.log(argv, 'Getting APIs...');
     const buildApi = await connection.getBuildApi();
     const containerApi = await connection.getFileContainerApi();
-
-    const filenameRegex = new RegExp(argv.filenameRegex);
 
     const minTime = getDate(argv.maxAgeDays);
     if (minTime) {
@@ -60,7 +66,7 @@ const argv = common.addCommonArgs(require('yargs'))
           if (dataSegments.length === 3 && dataSegments[0] === '#' && dataSegments[2] === 'drop') {
             const containerId = Number.parseInt(dataSegments[1]);
             if (!Number.isNaN(containerId)) {
-              const containerResults = await scanFileContainer(build.buildNumber, containerApi, containerId, dataSegments[2], filenameRegex);
+              const containerResults = await scanFileContainer(build.buildNumber, containerApi, containerId, dataSegments[2], pathRegex, filenameRegex);
 
               for (const item of containerResults) {
                 records.push({
@@ -91,7 +97,7 @@ const argv = common.addCommonArgs(require('yargs'))
   }
 })();
 
-async function scanFileContainer(contextText, containerApi, containerId, itemPath, filenameRegex) {
+async function scanFileContainer(contextText, containerApi, containerId, itemPath, pathRegex, filenameRegex) {
   common.log(argv, `Getting items in containerId ${containerId} under path ${itemPath}.`);
   const items = await containerApi.getItems(containerId, null, itemPath);
 
@@ -101,10 +107,21 @@ async function scanFileContainer(contextText, containerApi, containerId, itemPat
 
   for (const item of items) {
     if (item.itemType === 2 /* File */) {
-      const pathSegments = item.path.split("/");
-      const filename = pathSegments[pathSegments.length-1];
-      const match = filenameRegex.test(filename);
-      common.log(argv, `File: ${item.path}, fileLength: ${item.fileLength}, regex match:${match}`);
+      let match = true;
+
+      if (match && pathRegex) {
+        // common.log(argv, `pathRegex.test: ${item.path}`);
+        match = pathRegex.test(item.path);
+      }
+
+      if (match && filenameRegex) {
+        // common.log(argv, `filenameRegex.test: ${item.path}`);
+        const pathSegments = item.path.split("/");
+        const filename = pathSegments[pathSegments.length-1];
+        match = filenameRegex.test(filename);
+      }
+
+      common.log(argv, `filePath: ${item.path}, fileLength: ${item.fileLength}, regex match:${match}`);
 
       if (match) {
         results.push(item);
